@@ -1,8 +1,8 @@
 const express = require("express");
+const fs = require("fs");
 const server = express();
 const dbName = "koders.json";
-const fs = require("fs");
-const { request } = require("http");
+const port = 8080;
 
 function init() {
   const dbExist = fs.existsSync(dbName);
@@ -11,39 +11,43 @@ function init() {
   }
 }
 
+function setKoders(koders) {
+  fs.writeFileSync(dbName, JSON.stringify(koders), "utf-8");
+}
+
 init();
 const readDataBase = () => {
-  let userData = fs.readFileSync(dbName, "utf8");
+  let userData = JSON.parse(fs.readFileSync(dbName, "utf8"));
   return userData;
 };
 
 server.get("/koders", (request, response) => {
-  let koders = JSON.parse(readDataBase());
+  let koders = readDataBase();
   response.json(koders);
 });
 
 server.post("/koders/:name", (request, response) => {
   const name = request.params.name;
-  let koders = JSON.parse(readDataBase());
+  let koders = readDataBase();
   koders.push(name);
-  fs.writeFileSync(dbName, JSON.stringify(koders), "utf-8");
-  response.json(koders);
+  setKoders(koders);
+  response.status(201).json(koders);
 });
 
 server.delete("/koders/:name", (request, response) => {
   const name = request.params.name.toLowerCase();
-  let koders = JSON.parse(readDataBase());
+  let koders = readDataBase();
   koders = koders.filter((koder) => koder.toLowerCase() !== name);
-  fs.writeFileSync(dbName, JSON.stringify(koders), "utf-8");
+  setKoders(koders);
   response.json(koders);
 });
 
 server.delete("/koders", (request, response) => {
-  fs.writeFileSync(dbName, JSON.stringify([]), "utf-8");
-  let koders = JSON.parse(readDataBase());
-  response.json(koders);
+  setKoders(JSON.stringify([]));
+  let koders = readDataBase();
+  response.status(410).json(koders);
 });
 
-server.listen(8080, () => {
-  console.log("Server is running with express in 8080 port");
+server.listen(port, () => {
+  //console.log("Server is running with express in 8080 port");
 });
